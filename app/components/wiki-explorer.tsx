@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Brand, SiteHeader } from "./site-brand";
+import { pokemonSpriteIds } from "../data/pokemon-sprite-ids";
 
 type SpawnVariant = {
   id: string;
@@ -57,11 +58,16 @@ function PokemonIcon({ pokemon, large = false }: { pokemon: SpawnPokemon; large?
   const [failed, setFailed] = useState(false);
   const slug = iconKey(pokemon.key || pokemon.name);
   const size = large ? 170 : 64;
+  const spriteId = pokemonSpriteIds[slug];
+  const primarySrc = spriteId
+    ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${spriteId}.png`
+    : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${slug}.png`;
+
   if (failed) return <span className={`pokemon-icon-fallback ${large ? "large" : ""}`}>?</span>;
   return (
     <span className={`pokemon-icon ${large ? "large" : ""}`}>
       <img
-        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${slug}.png`}
+        src={primarySrc}
         alt={pokemon.name}
         width={size}
         height={size}
@@ -70,7 +76,9 @@ function PokemonIcon({ pokemon, large = false }: { pokemon: SpawnPokemon; large?
           const image = event.currentTarget;
           if (!image.dataset.fallback) {
             image.dataset.fallback = "1";
-            image.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${slug}.png`;
+            image.src = spriteId
+              ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteId}.png`
+              : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${slug}.png`;
           } else {
             setFailed(true);
           }
