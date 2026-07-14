@@ -5,22 +5,18 @@ type HeaderProps = {
   ctaLabel?: string;
 };
 
-function ArrowIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg>;
-}
-
 export function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="Hunter Network - về trang chủ">
-      <span className="brand-mark"><span /></span>
-      <span className="brand-copy"><b>HUNTER</b><small>NETWORK</small></span>
+    <Link href="/" className="brand" aria-label="Hunter Network — về trang chủ">
+      <span className="brand-main">HUNTER</span>
+      <span className="brand-sub">NETWORK</span>
     </Link>
   );
 }
 
-export function SiteHeader({ ctaHref = "/#topup", ctaLabel = "NẠP HC" }: HeaderProps) {
+export function SiteHeader({ ctaHref = "/#topup", ctaLabel = "Nạp HC" }: HeaderProps) {
   return (
-    <header className="site-header">
+    <header className="site-header section-shell">
       <Brand />
       <nav aria-label="Điều hướng chính">
         <Link href="/#skins">Skin</Link>
@@ -28,7 +24,7 @@ export function SiteHeader({ ctaHref = "/#topup", ctaLabel = "NẠP HC" }: Heade
         <Link href="/huong-dan">Tải mod</Link>
         <Link href="/wiki">Wiki</Link>
       </nav>
-      <Link className="nav-cta" href={ctaHref}><span>{ctaLabel}</span><ArrowIcon /></Link>
+      <Link className="nav-cta" href={ctaHref}>{ctaLabel}<span aria-hidden="true">→</span></Link>
     </header>
   );
 }
