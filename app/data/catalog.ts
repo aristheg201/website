@@ -1,82 +1,17 @@
-export type Skin = {
-  id: string;
-  pokemon: string;
-  name: string;
-  renderIndex: number;
-  image: string;
-  collection: "atelier" | "heroes" | "titans";
-  featured?: boolean;
-};
-
-let skinRenderIndex = 0;
-const skin = (id: string, pokemon: string, name: string, collection: Skin["collection"], featured = false): Skin => ({
-  id,
-  pokemon,
-  name,
-  collection,
-  featured,
-  renderIndex: skinRenderIndex++,
-  image: `/skins/${pokemon.toLowerCase().replaceAll(" ", "-")}.png`,
-});
-
-export const skins: Skin[] = [
-  skin("gardevoir-2b", "Gardevoir", "2B", "atelier", true),
-  skin("gardevoir-amy", "Gardevoir", "Amy", "atelier"),
-  skin("gardevoir-bunny", "Gardevoir", "Bunny", "atelier", true),
-  skin("gardevoir-fubuki", "Gardevoir", "Fubuki", "atelier"),
-  skin("gardevoir-lune", "Gardevoir", "Lune", "atelier"),
-  skin("gardevoir-robin", "Gardevoir", "Robin", "atelier"),
-  skin("gardevoir-apovoir", "Gardevoir", "Apovoir", "atelier"),
-  skin("gardevoir-arbidevoir", "Gardevoir", "Arbidevoir", "atelier"),
-  skin("gardevoir-buttervoir", "Gardevoir", "Buttervoir", "atelier"),
-  skin("gardevoir-censored", "Gardevoir", "Censored", "atelier"),
-  skin("gardevoir-despairoir", "Gardevoir", "Despairoir", "atelier"),
-  skin("gardevoir-rabbivoir", "Gardevoir", "Rabbivoir", "atelier"),
-  skin("indeedee-maid", "Indeedee", "Maid", "atelier"),
-  skin("indeedee-knight", "Indeedee", "Knight", "heroes"),
-  skin("cyclizar-akira", "Cyclizar", "Akira", "heroes"),
-  skin("lucario-batman", "Lucario", "Batman", "heroes", true),
-  skin("lucario-hyper-ela", "Lucario", "Hyper / Ela", "heroes"),
-  skin("buzzwole-superman", "Buzzwole", "Superman", "heroes"),
-  skin("ceruledge-maou", "Ceruledge", "Maou", "heroes"),
-  skin("armarouge-axe", "Armarouge", "Axe", "heroes"),
-  skin("aerodactyl-rodan", "Aerodactyl", "Rodan", "titans"),
-  skin("charizard-inferno", "Charizard", "Inferno", "titans", true),
-  skin("marowak-kidzilla", "Marowak", "Kidzilla", "titans"),
-  skin("hydreigon-ghidorah", "Hydreigon", "King Ghidorah", "titans", true),
-  skin("rillaboom-kong", "Rillaboom", "King Kong", "titans"),
-  skin("tyranitar-godzilla", "Tyranitar", "Godzilla", "titans", true),
-  skin("tyrantrum-flora", "Tyrantrum", "Flora", "titans"),
-  skin("volcarona-mothra", "Volcarona", "Mothra", "titans"),
-  skin("zeraora-flash", "Zeraora", "Flash", "heroes"),
+export type SkinCollection = "liger" | "hero" | "legendary" | "gacha";
+export type Skin = { id:string; pokemon:string; name:string; aspect:string; renderIndex:number; priceHC:number; collection:SkinCollection; purchasable:boolean };
+const entries: Array<[string,string,string,string,number,SkinCollection,boolean]> = [
+["eevee-liger-zero","Eevee","Liger Zero","ligerzero",6,"liger",true],["vaporeon-liger","Vaporeon","Liger Vaporeon","zoid",6,"liger",true],["jolteon-liger","Jolteon","Liger Jolteon","zoid",6,"liger",true],["flareon-liger","Flareon","Liger Flareon","zoid",6,"liger",true],
+["lunala-mega","Lunala","Mega Lunala","mega_lunala",6,"legendary",true],["lunala-mega-gold","Lunala","Mega Lunala Gold","mega_lunala_gold",10,"legendary",true],["solgaleo-mega","Solgaleo","Mega Solgaleo","mega_solgaleo",6,"legendary",true],["solgaleo-mega-gold","Solgaleo","Mega Solgaleo Gold","mega_solgaleo_gold",10,"legendary",true],
+["mewtwo-mewjo","Mewtwo","Mewjo","mewjo",6,"hero",true],["iron-valiant-iron-woman","Iron Valiant","Iron Woman","ironwoman",8,"hero",true],["buzzwole-superman","Buzzwole","Superman","buzzwole_superman",8,"hero",true],["armarouge-axe","Armarouge","Axe","axe",10,"hero",true],["ceruledge-maou","Ceruledge","Maou","maou",10,"hero",true],["ninetales-kurama","Ninetales","Kurama","kurama",8,"hero",true],["arceus-supreme","Arceus","Supreme","supreme",12,"legendary",true],["regigigas-regiraga","Regigigas","Regiraga","regiraga",12,"legendary",true],["ceruledge-sam","Ceruledge","Sam","sam",12,"hero",true],["palkia-the-long-quiet","Palkia","The Long Quiet","thelongquiet",10,"legendary",true],["rayquaza-xa-than","Rayquaza","Xà Thần","rayquaza_xathan",10,"legendary",true],["zygarde-gundam","Zygarde","Gundam Freedom","zg782",12,"legendary",true],["volcarona-moonlight","Volcarona","Moonlight","moonlight",10,"legendary",true],["lucario-batman","Lucario","Batman","batman",12,"hero",true],["cyclizar-akira","Cyclizar","Akira","akira",10,"hero",true],["gallade-denji","Gallade","Denji","denji_gallade",10,"hero",true],
+["gardevoir-2b","Gardevoir","2B","2b",0,"gacha",false],["gardevoir-amy","Gardevoir","Amy","amy",0,"gacha",false],["gardevoir-bunny","Gardevoir","Bunny","bunny",0,"gacha",false],["gardevoir-fubuki","Gardevoir","Fubuki","fubuki",0,"gacha",false],["gardevoir-lune","Gardevoir","Lune","lune",0,"gacha",false],["gardevoir-robin","Gardevoir","Robin","robin",0,"gacha",false],["gardevoir-apovoir","Gardevoir","Apovoir","apovoir",0,"gacha",false],["gardevoir-arbidevoir","Gardevoir","Arbidevoir","arbidevoir",0,"gacha",false],["gardevoir-buttervoir","Gardevoir","Buttervoir","buttervoir",0,"gacha",false],["gardevoir-censored","Gardevoir","Censored","censored",0,"gacha",false],["gardevoir-despairoir","Gardevoir","Despairoir","despairoir",0,"gacha",false],["gardevoir-rabbivoir","Gardevoir","Rabbivoir","rabbivoir",0,"gacha",false],["indeedee-maid","Indeedee","Maid","maid",0,"gacha",false],["indeedee-knight","Indeedee","Knight","knight",0,"gacha",false],["lucario-hyper-ela","Lucario","Hyper / Ela","hyper_ela",0,"gacha",false],["aerodactyl-rodan","Aerodactyl","Rodan","rodan",0,"gacha",false],["charizard-inferno","Charizard","Inferno","inferno",0,"gacha",false],["marowak-kidzilla","Marowak","Kidzilla","kidzilla",0,"gacha",false],["hydreigon-ghidorah","Hydreigon","King Ghidorah","ghidorah",0,"gacha",false],["rillaboom-kong","Rillaboom","King Kong","kong",0,"gacha",false],["tyranitar-godzilla","Tyranitar","Godzilla","godzilla",0,"gacha",false],["tyrantrum-flora","Tyrantrum","Flora","flora",0,"gacha",false],["volcarona-mothra","Volcarona","Mothra","mothra",0,"gacha",false],["zeraora-flash","Zeraora","Flash","flash",0,"gacha",false]
 ];
-
-export type Reward = {
-  server: "cobblemon" | "rpg";
-  rewardType: "hunter_coin" | "rpg_points";
-  dailyAmount: number;
-  bonusAmount?: number;
-};
-
-export type PassProduct = {
-  code: string;
-  title: string;
-  shortTitle: string;
-  server: "Cobblemon" | "RPG" | "Combo";
-  durationDays: number;
-  priceVnd: number;
-  rewards: Reward[];
-};
-
-export const passProducts: PassProduct[] = [
-  { code: "weekly-cobblemon", title: "Thẻ Tuần · Cobblemon", shortTitle: "Tuần", server: "Cobblemon", durationDays: 7, priceVnd: 100_000, rewards: [{ server: "cobblemon", rewardType: "hunter_coin", dailyAmount: 1 }] },
-  { code: "weekly-rpg", title: "Thẻ Tuần · RPG", shortTitle: "Tuần", server: "RPG", durationDays: 7, priceVnd: 100_000, rewards: [{ server: "rpg", rewardType: "rpg_points", dailyAmount: 25 }] },
-  { code: "monthly-cobblemon", title: "Thẻ Tháng · Cobblemon", shortTitle: "Tháng", server: "Cobblemon", durationDays: 30, priceVnd: 300_000, rewards: [{ server: "cobblemon", rewardType: "hunter_coin", dailyAmount: 2 }] },
-  { code: "monthly-rpg", title: "Thẻ Tháng · RPG", shortTitle: "Tháng", server: "RPG", durationDays: 30, priceVnd: 300_000, rewards: [{ server: "rpg", rewardType: "rpg_points", dailyAmount: 50 }] },
-  { code: "season-cobblemon", title: "Thẻ Mùa · Cobblemon", shortTitle: "Mùa", server: "Cobblemon", durationDays: 90, priceVnd: 800_000, rewards: [{ server: "cobblemon", rewardType: "hunter_coin", dailyAmount: 2, bonusAmount: 5 }] },
-  { code: "season-rpg", title: "Thẻ Mùa · RPG", shortTitle: "Mùa", server: "RPG", durationDays: 90, priceVnd: 800_000, rewards: [{ server: "rpg", rewardType: "rpg_points", dailyAmount: 50, bonusAmount: 150 }] },
-  { code: "monthly-combo", title: "Thẻ Tháng Super Combo", shortTitle: "Super Combo", server: "Combo", durationDays: 30, priceVnd: 500_000, rewards: [{ server: "cobblemon", rewardType: "hunter_coin", dailyAmount: 2 }, { server: "rpg", rewardType: "rpg_points", dailyAmount: 50 }] },
+export const skins: Skin[] = entries.map((e,i)=>({id:e[0],pokemon:e[1],name:e[2],aspect:e[3],priceHC:e[4],collection:e[5],purchasable:e[6],renderIndex:i}));
+export const HUNTER_COIN_PRICE=25_000;
+export const formatVnd=(v:number)=>new Intl.NumberFormat("vi-VN",{style:"currency",currency:"VND",maximumFractionDigits:0}).format(v);
+export const shopBundles=[
+{title:"10 chìa Skin Gacha",priceHC:12,rewards:["10 lượt mở hòm skin"]},{title:"24 chìa Huyền Thoại",priceHC:50,rewards:["24 chìa Legendary"]},{title:"12 chìa Ultra",priceHC:12,rewards:["12 chìa Ultra"]},{title:"12 chìa Huyền Bí",priceHC:12,rewards:["12 chìa Mythical"]},{title:"Pokémon Max IV cấp 100",priceHC:20,rewards:["Pokémon Max IV cấp 100","20 EXP Candy XL"]},{title:"32 Rare Candy",priceHC:10,rewards:["32 Rare Candy"]}
 ];
-
-export const HUNTER_COIN_PRICE = 25_000;
-export const formatVnd = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+export const spendMilestones=[
+{amountHC:50,title:"Mốc 50 HC",rewards:["10 Kim cương"]},{amountHC:75,title:"Mốc 75 HC",rewards:["15 Kim cương","64 EXP Candy XL","Titan Hammer + Titan Pauldron","10 chìa Legendary"]},{amountHC:100,title:"Mốc 100 HC",rewards:["20 chìa Cosmetic Skin","5 Shiny Ball","Gold Incubator","10 Ability Patch","10 chìa Legendary"]}
+];
