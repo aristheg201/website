@@ -2,41 +2,53 @@ export type Skin = {
   id: string;
   pokemon: string;
   name: string;
+  renderIndex: number;
   image: string;
   collection: "atelier" | "heroes" | "titans";
   featured?: boolean;
 };
 
+let skinRenderIndex = 0;
+const skin = (id: string, pokemon: string, name: string, collection: Skin["collection"], featured = false): Skin => ({
+  id,
+  pokemon,
+  name,
+  collection,
+  featured,
+  renderIndex: skinRenderIndex++,
+  image: `/skins/${pokemon.toLowerCase().replaceAll(" ", "-")}.png`,
+});
+
 export const skins: Skin[] = [
-  { id: "gardevoir-2b", pokemon: "Gardevoir", name: "2B", image: "/skins/gardevoir.png", collection: "atelier", featured: true },
-  { id: "gardevoir-amy", pokemon: "Gardevoir", name: "Amy", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-bunny", pokemon: "Gardevoir", name: "Bunny", image: "/skins/gardevoir.png", collection: "atelier", featured: true },
-  { id: "gardevoir-fubuki", pokemon: "Gardevoir", name: "Fubuki", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-lune", pokemon: "Gardevoir", name: "Lune", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-robin", pokemon: "Gardevoir", name: "Robin", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-apovoir", pokemon: "Gardevoir", name: "Apovoir", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-arbidevoir", pokemon: "Gardevoir", name: "Arbidevoir", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-buttervoir", pokemon: "Gardevoir", name: "Buttervoir", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-censored", pokemon: "Gardevoir", name: "Censored", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-despairoir", pokemon: "Gardevoir", name: "Despairoir", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "gardevoir-rabbivoir", pokemon: "Gardevoir", name: "Rabbivoir", image: "/skins/gardevoir.png", collection: "atelier" },
-  { id: "indeedee-maid", pokemon: "Indeedee", name: "Maid", image: "/skins/indeedee.png", collection: "atelier" },
-  { id: "indeedee-knight", pokemon: "Indeedee", name: "Knight", image: "/skins/indeedee.png", collection: "heroes" },
-  { id: "cyclizar-akira", pokemon: "Cyclizar", name: "Akira", image: "/skins/cyclizar.png", collection: "heroes" },
-  { id: "lucario-batman", pokemon: "Lucario", name: "Batman", image: "/skins/lucario.png", collection: "heroes", featured: true },
-  { id: "lucario-hyper-ela", pokemon: "Lucario", name: "Hyper / Ela", image: "/skins/lucario.png", collection: "heroes" },
-  { id: "buzzwole-superman", pokemon: "Buzzwole", name: "Superman", image: "/skins/buzzwole.png", collection: "heroes" },
-  { id: "ceruledge-maou", pokemon: "Ceruledge", name: "Maou", image: "/skins/ceruledge.png", collection: "heroes" },
-  { id: "armarouge-axe", pokemon: "Armarouge", name: "Axe", image: "/skins/armarouge.png", collection: "heroes" },
-  { id: "aerodactyl-rodan", pokemon: "Aerodactyl", name: "Rodan", image: "/skins/aerodactyl.png", collection: "titans" },
-  { id: "charizard-inferno", pokemon: "Charizard", name: "Inferno", image: "/skins/charizard.png", collection: "titans", featured: true },
-  { id: "marowak-kidzilla", pokemon: "Marowak", name: "Kidzilla", image: "/skins/marowak.png", collection: "titans" },
-  { id: "hydreigon-ghidorah", pokemon: "Hydreigon", name: "King Ghidorah", image: "/skins/hydreigon.png", collection: "titans", featured: true },
-  { id: "rillaboom-kong", pokemon: "Rillaboom", name: "King Kong", image: "/skins/rillaboom.png", collection: "titans" },
-  { id: "tyranitar-godzilla", pokemon: "Tyranitar", name: "Godzilla", image: "/skins/tyranitar.png", collection: "titans", featured: true },
-  { id: "tyrantrum-flora", pokemon: "Tyrantrum", name: "Flora", image: "/skins/tyrantrum.png", collection: "titans" },
-  { id: "volcarona-mothra", pokemon: "Volcarona", name: "Mothra", image: "/skins/volcarona.png", collection: "titans" },
-  { id: "zeraora-flash", pokemon: "Zeraora", name: "Flash", image: "/skins/zeraora.png", collection: "heroes" },
+  skin("gardevoir-2b", "Gardevoir", "2B", "atelier", true),
+  skin("gardevoir-amy", "Gardevoir", "Amy", "atelier"),
+  skin("gardevoir-bunny", "Gardevoir", "Bunny", "atelier", true),
+  skin("gardevoir-fubuki", "Gardevoir", "Fubuki", "atelier"),
+  skin("gardevoir-lune", "Gardevoir", "Lune", "atelier"),
+  skin("gardevoir-robin", "Gardevoir", "Robin", "atelier"),
+  skin("gardevoir-apovoir", "Gardevoir", "Apovoir", "atelier"),
+  skin("gardevoir-arbidevoir", "Gardevoir", "Arbidevoir", "atelier"),
+  skin("gardevoir-buttervoir", "Gardevoir", "Buttervoir", "atelier"),
+  skin("gardevoir-censored", "Gardevoir", "Censored", "atelier"),
+  skin("gardevoir-despairoir", "Gardevoir", "Despairoir", "atelier"),
+  skin("gardevoir-rabbivoir", "Gardevoir", "Rabbivoir", "atelier"),
+  skin("indeedee-maid", "Indeedee", "Maid", "atelier"),
+  skin("indeedee-knight", "Indeedee", "Knight", "heroes"),
+  skin("cyclizar-akira", "Cyclizar", "Akira", "heroes"),
+  skin("lucario-batman", "Lucario", "Batman", "heroes", true),
+  skin("lucario-hyper-ela", "Lucario", "Hyper / Ela", "heroes"),
+  skin("buzzwole-superman", "Buzzwole", "Superman", "heroes"),
+  skin("ceruledge-maou", "Ceruledge", "Maou", "heroes"),
+  skin("armarouge-axe", "Armarouge", "Axe", "heroes"),
+  skin("aerodactyl-rodan", "Aerodactyl", "Rodan", "titans"),
+  skin("charizard-inferno", "Charizard", "Inferno", "titans", true),
+  skin("marowak-kidzilla", "Marowak", "Kidzilla", "titans"),
+  skin("hydreigon-ghidorah", "Hydreigon", "King Ghidorah", "titans", true),
+  skin("rillaboom-kong", "Rillaboom", "King Kong", "titans"),
+  skin("tyranitar-godzilla", "Tyranitar", "Godzilla", "titans", true),
+  skin("tyrantrum-flora", "Tyrantrum", "Flora", "titans"),
+  skin("volcarona-mothra", "Volcarona", "Mothra", "titans"),
+  skin("zeraora-flash", "Zeraora", "Flash", "heroes"),
 ];
 
 export type Reward = {
@@ -67,6 +79,4 @@ export const passProducts: PassProduct[] = [
 ];
 
 export const HUNTER_COIN_PRICE = 25_000;
-
-export const formatVnd = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+export const formatVnd = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
