@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -78,14 +78,59 @@ jobs:
           JAR=$(find fabric/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-dev.jar' ! -name '*-dev-shadow.jar' | head -n 1)
           test -n "$JAR"
           unzip -t "$JAR"
-          unzip -l "$JAR" | grep -q 'fi/iki/elonen/NanoHTTPD.class'
-          unzip -l "$JAR" | grep -q 'com/google/zxing/MultiFormatWriter.class'
-          unzip -l "$JAR" | grep -q 'com/google/zxing/client/j2se/MatrixToImageWriter.class'
-          unzip -l "$JAR" | grep -q 'org/yaml/snakeyaml/Yaml.class'
-          ! unzip -l "$JAR" | grep -q 'META-INF/jars/architectury-fabric-9.2.14.jar'
+          zipinfo -1 "$JAR" > jar-entries.txt
+          grep -Fxq 'fi/iki/elonen/NanoHTTPD.class' jar-entries.txt
+          grep -Fxq 'com/google/zxing/MultiFormatWriter.class' jar-entries.txt
+          grep -Fxq 'com/google/zxing/client/j2se/MatrixToImageWriter.class' jar-entries.txt
+          grep -Fxq 'org/yaml/snakeyaml/Yaml.class' jar-entries.txt
+          ! grep -Fq 'META-INF/jars/architectury-fabric-9.2.14.jar' jar-entries.txt
           unzip -p "$JAR" META-INF/MANIFEST.MF | grep -q 'Fabric-Minecraft-Version: 1.21.1'
           unzip -p "$JAR" fabric.mod.json | grep -q '"minecraft": "~1.21.1"'
           unzip -p "$JAR" fabric.mod.json | grep -q '"architectury": ">=13.0.11"'
+
+      - name: Smoke-test Fabric server startup
+        working-directory: paybot
+        run: |
+          mkdir -p run fabric/run
+          printf 'eula=true\n' > run/eula.txt
+          cp run/eula.txt fabric/run/eula.txt
+          cat > run/server.properties <<'EOF'
+          online-mode=false
+          server-port=25575
+          view-distance=2
+          simulation-distance=2
+          generate-structures=false
+          level-type=minecraft:flat
+          motd=PayBot smoke test
+          EOF
+          cp run/server.properties fabric/run/server.properties
+          rm -f smoke-input
+          mkfifo smoke-input
+          : > smoke.log
+          (
+            for i in $(seq 1 180); do
+              if grep -q 'Done (' smoke.log; then
+                sleep 8
+                printf 'stop\n'
+                exit 0
+              fi
+              if grep -Eq 'Could not execute entrypoint stage|Failed to start the minecraft server' smoke.log; then
+                printf 'stop\n'
+                exit 0
+              fi
+              sleep 1
+            done
+            printf 'stop\n'
+          ) > smoke-input &
+          set +e
+          timeout 240s gradle :fabric:runServer --no-daemon < smoke-input > smoke.log 2>&1
+          RC=$?
+          set -e
+          echo "runServer exit code: $RC"
+          tail -n 220 smoke.log
+          grep -q 'Done (' smoke.log
+          grep -q '\[PayBot\]' smoke.log
+          ! grep -Eq 'NoSuchMethodError|NoClassDefFoundError: fi/iki/elonen/NanoHTTPD|Could not execute entrypoint stage.*paybot' smoke.log
 
       - name: Collect build output
         if: always()
@@ -94,6 +139,7 @@ jobs:
           find paybot/fabric/build/libs -maxdepth 1 -type f -name '*.jar' -print -exec cp {} out/ \; 2>/dev/null || true
           cp paybot/gradle.properties out/gradle.properties || true
           cp paybot/fabric/src/main/resources/fabric.mod.json out/fabric.mod.json || true
+          cp paybot/smoke.log out/server-smoke.log 2>/dev/null || true
           tar -czf out/paybot-patched-source.tar.gz -C paybot common fabric build.gradle gradle.properties settings.gradle 2>/dev/null || true
 
       - name: Upload build
