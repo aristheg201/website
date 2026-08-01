@@ -411,7 +411,7 @@ write(str(p), s)
 if Path("common/src/main/resources/messages.yml").exists():
     raise SystemExit("messages.yml must not exist in the hardcoded build")
 gui = read("common/src/main/java/com/naptien/gui/GuiUtil.java")
-if "DENOMS" not in gui or "10000" not in gui or "1000000" not in gui:
+if "DENOMS" not in gui or "10_000" not in gui or "1_000_000" not in gui:
     raise SystemExit("Hardcoded denomination array was not preserved")
 
 print("Prepared independent Forge and NeoForge 1.21.1 hardcoded-fix projects")
