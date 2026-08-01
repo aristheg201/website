@@ -21,6 +21,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Set up Gradle 8.8
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+
       - name: Clone PayBot source
         run: git clone --depth 1 https://github.com/ShirozNguyen/Paybot.git paybot
 
@@ -48,7 +53,6 @@ jobs:
 
           p = Path('build.gradle')
           s = p.read_text(encoding='utf-8')
-          s = s.replace("id 'dev.architectury.loom' version '1.7.435' apply false", "id 'dev.architectury.loom' version '1.7.435' apply false")
           s = s.replace('options.release = 17', 'options.release = 21')
           p.write_text(s, encoding='utf-8')
 
@@ -67,9 +71,7 @@ jobs:
 
       - name: Build Fabric jar
         working-directory: paybot
-        run: |
-          chmod +x gradlew
-          ./gradlew :fabric:build --stacktrace --no-daemon
+        run: gradle :fabric:build --stacktrace --no-daemon
 
       - name: Collect build output
         if: always()
