@@ -31,7 +31,18 @@ jobs:
 
       - name: Apply Fabric 1.21.1 source port
         working-directory: paybot
-        run: python3 ../.github/scripts/patch_paybot_1211.py
+        run: |
+          python3 ../.github/scripts/patch_paybot_1211.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('common/src/main/java/com/naptien/compat/VanillaGuiBackend.java')
+          s = p.read_text(encoding='utf-8')
+          old = 'new ItemLore(lore.stream().map(Component::literal).toList())'
+          new = 'new ItemLore(lore.stream().map(line -> (Component) Component.literal(line)).toList())'
+          if old not in s:
+              raise SystemExit('Missing ItemLore generic expression')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+          PY
 
       - name: Build Fabric jar
         working-directory: paybot
