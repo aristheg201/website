@@ -1,0 +1,101 @@
+name: Export PayBot Gradle cache
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 8.8
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+          cache-disabled: true
+
+      - name: Clone and build the public PayBot dependency graph
+        run: |
+          git clone --depth 1 https://github.com/ShirozNguyen/Paybot.git paybot
+          cd paybot
+          python3 ../.github/scripts/patch_paybot_1211.py
+          python3 ../.github/scripts/merge_paybot_550.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          p = Path('common/src/main/java/com/naptien/compat/VanillaGuiBackend.java')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('new ItemLore(lore.stream().map(Component::literal).toList())',
+                        'new ItemLore(lore.stream().map(line -> (Component) Component.literal(line)).toList())')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('fabric/src/main/resources/quilt.mod.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          deps = data['quilt_loader']['depends']
+          for dep in deps:
+              if dep.get('id') == 'minecraft': dep['versions'] = '~1.21.1'
+          if not any(dep.get('id') == 'architectury' for dep in deps):
+              deps.append({'id': 'architectury', 'versions': '>=13.0.11'})
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          p = Path('fabric/build.gradle')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('    shadowCommon\n', '    shadowCommon\n    shade\n', 1)
+          anchor = '    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }\n'
+          extra = anchor + '''
+
+    implementation 'org.yaml:snakeyaml:2.2'
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }
+    implementation('com.mysql:mysql-connector-j:9.2.0') { transitive = false }
+
+    shade 'org.yaml:snakeyaml:2.2'
+    shade 'com.google.zxing:core:3.5.3'
+    shade 'com.google.zxing:javase:3.5.3'
+    shade 'org.nanohttpd:nanohttpd:2.3.1'
+    shade('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }
+    shade('com.mysql:mysql-connector-j:9.2.0') { transitive = false }
+'''
+          if anchor not in s: raise SystemExit('missing shadowCommon anchor')
+          s = s.replace(anchor, extra, 1)
+          s = s.replace('    configurations = [project.configurations.shadowCommon]\n',
+                        '    configurations = [project.configurations.shadowCommon, project.configurations.shade]\n', 1)
+          s = s.replace('    exclude "architectury.common.json"\n',
+                        '    exclude "architectury.common.json"\n    exclude "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA"\n    mergeServiceFiles()\n', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          gradle :fabric:build --stacktrace --no-daemon
+
+      - name: Export Gradle installation and caches
+        run: |
+          mkdir -p out
+          GRADLE_BIN=$(command -v gradle)
+          GRADLE_HOME=$(cd "$(dirname "$GRADLE_BIN")/.." && pwd)
+          echo "$GRADLE_HOME" > out/gradle-home-path.txt
+          tar -czf out/gradle-8.8-install.tar.gz -C "$(dirname "$GRADLE_HOME")" "$(basename "$GRADLE_HOME")"
+          tar -czf out/gradle-user-home.tar.gz -C "$HOME" .gradle
+          du -sh out/*
+
+      - name: Upload cache bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: paybot-gradle-offline-cache
+          path: out/
+          compression-level: 0
+          if-no-files-found: error
