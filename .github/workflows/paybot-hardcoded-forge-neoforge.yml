@@ -36,7 +36,6 @@ jobs:
           set -euxo pipefail
           python3 ../.github/scripts/patch_paybot_1211.py
           python3 ../.github/scripts/patch_paybot_hardcoded_forge_neoforge_1211.py
-
           test ! -e common/src/main/resources/messages.yml
           test ! -e common/src/main/java/com/naptien/config/MessageManager.java
           grep -q 'public static final int\[\] DENOMS' common/src/main/java/com/naptien/gui/GuiUtil.java
@@ -65,18 +64,14 @@ jobs:
           set -euxo pipefail
           unzip -t "$FORGE_JAR" >/dev/null
           unzip -t "$NEOFORGE_JAR" >/dev/null
-
           zipinfo -1 "$FORGE_JAR" > forge-entries.txt
           zipinfo -1 "$NEOFORGE_JAR" > neoforge-entries.txt
-
           grep -Fxq 'META-INF/mods.toml' forge-entries.txt
           grep -Fxq 'com/naptien/forge/PayBotForgeInit.class' forge-entries.txt
           ! grep -Fxq 'META-INF/neoforge.mods.toml' forge-entries.txt
-
           grep -Fxq 'META-INF/neoforge.mods.toml' neoforge-entries.txt
           grep -Fxq 'com/naptien/neoforge/PayBotNeoForgeInit.class' neoforge-entries.txt
           ! grep -Fxq 'META-INF/mods.toml' neoforge-entries.txt
-
           for JAR in "$FORGE_JAR" "$NEOFORGE_JAR"; do
             ENTRIES=$(mktemp)
             zipinfo -1 "$JAR" > "$ENTRIES"
@@ -92,7 +87,6 @@ jobs:
             ! grep -Fq 'MessageManager.class' "$ENTRIES"
             ! unzip -p "$JAR" com/naptien/PayBotMod.class | strings | grep -Fxq 'method_7985'
           done
-
           unzip -p "$FORGE_JAR" META-INF/mods.toml | grep -q 'versionRange="\[1.21.1,1.21.2)"'
           unzip -p "$FORGE_JAR" META-INF/mods.toml | grep -q 'versionRange="\[52.1.0,)"'
           unzip -p "$NEOFORGE_JAR" META-INF/neoforge.mods.toml | grep -q 'versionRange="\[1.21.1,1.21.2)"'
@@ -114,7 +108,6 @@ jobs:
           level-type=minecraft:flat
           motd=PayBot Forge smoke test
           EOF
-
           rm -f forge-smoke-input forge-smoke.log forge-smoke-ok
           mkfifo forge-smoke-input
           exec 3<>forge-smoke-input
@@ -157,7 +150,6 @@ jobs:
           level-type=minecraft:flat
           motd=PayBot NeoForge smoke test
           EOF
-
           rm -f neoforge-smoke-input neoforge-smoke.log neoforge-smoke-ok
           mkfifo neoforge-smoke-input
           exec 3<>neoforge-smoke-input
@@ -189,8 +181,7 @@ jobs:
         working-directory: paybot
         run: |
           set -euxo pipefail
-          mkdir -p ../out/forge-panel/mods ../out/neoforge-panel/mods ../out/source
-
+          mkdir -p ../out/forge-panel/mods ../out/neoforge-panel/mods
           if [ -f "${FORGE_JAR:-}" ]; then
             cp "$FORGE_JAR" ../out/PayBot-Mod-Forge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
             cp "$FORGE_JAR" ../out/forge-panel/mods/PayBot-Mod-Forge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
@@ -199,7 +190,6 @@ jobs:
             cp "$NEOFORGE_JAR" ../out/PayBot-Mod-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
             cp "$NEOFORGE_JAR" ../out/neoforge-panel/mods/PayBot-Mod-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
           fi
-
           cat > ../out/forge-panel/CAI_DAT.txt <<'EOF'
           Dung cho Minecraft 1.21.1 Forge 52.1.x, Java 21.
           Stop server, xoa JAR PayBot Forge/NeoForge cu, extract tai root server.
@@ -212,11 +202,9 @@ jobs:
           Chi cai mot ban dung voi loader. Can Architectury API 13.0.11 cho NeoForge.
           Ban nay giu nguyen message, GUI va menh gia hardcode cu.
           EOF
-
           tar -czf ../out/PayBot-Forge-5.5.0-MC1.21.1-HARDCODED-FIX-PANEL.tar.gz -C ../out/forge-panel .
           tar -czf ../out/PayBot-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX-PANEL.tar.gz -C ../out/neoforge-panel .
           tar -czf ../out/PayBot-5.5.0-MC1.21.1-HARDCODED-FIX-SOURCE.tar.gz common forge neoforge build.gradle settings.gradle gradle.properties
-
           cp forge-smoke.log ../out/forge-server-smoke.log 2>/dev/null || true
           cp neoforge-smoke.log ../out/neoforge-server-smoke.log 2>/dev/null || true
           cat > ../out/VALIDATION.txt <<'EOF'
@@ -236,3 +224,5 @@ jobs:
           name: paybot-hardcoded-forge-neoforge-1.21.1
           path: out/
           if-no-files-found: error
+
+# revision 2
