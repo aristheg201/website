@@ -51,6 +51,11 @@ jobs:
               s = s.replace(old, new)
           p.write_text(s, encoding='utf-8')
 
+          p = Path('settings.gradle')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("include('forge')\n", '').replace("include('plugin')\n", '')
+          p.write_text(s, encoding='utf-8')
+
           p = Path('build.gradle')
           s = p.read_text(encoding='utf-8')
           s = s.replace('options.release = 17', 'options.release = 21')
