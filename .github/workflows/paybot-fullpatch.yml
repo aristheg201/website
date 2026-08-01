@@ -29,50 +29,9 @@ jobs:
       - name: Clone PayBot source
         run: git clone --depth 1 https://github.com/ShirozNguyen/Paybot.git paybot
 
-      - name: Retarget build to Minecraft 1.21.1
+      - name: Apply Fabric 1.21.1 source port
         working-directory: paybot
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          p = Path('gradle.properties')
-          s = p.read_text(encoding='utf-8')
-          replacements = {
-              'mod_version = 5.4.3': 'mod_version = 5.5.0-mc1.21.1-fullpatch',
-              'minecraft_version = 1.20.1': 'minecraft_version = 1.21.1',
-              'architectury_version = 9.2.14': 'architectury_version = 13.0.11',
-              'fabric_version = 0.92.2+1.20.1': 'fabric_version = 0.116.15+1.21.1',
-              'fabric_loader_version = 0.15.11': 'fabric_loader_version = 0.18.4',
-              'enabled_platforms = fabric,forge': 'enabled_platforms = fabric',
-          }
-          for old, new in replacements.items():
-              if old not in s:
-                  raise SystemExit(f'missing expected setting: {old}')
-              s = s.replace(old, new)
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('settings.gradle')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace("include('forge')\n", '').replace("include('plugin')\n", '')
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('build.gradle')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('options.release = 17', 'options.release = 21')
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('fabric/build.gradle')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('modImplementation include("dev.architectury:architectury-fabric:${rootProject.architectury_version}")',
-                        'modImplementation "dev.architectury:architectury-fabric:${rootProject.architectury_version}"')
-          p.write_text(s, encoding='utf-8')
-
-          p = Path('fabric/src/main/resources/fabric.mod.json')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('"fabricloader": ">=0.15.11",\n    "minecraft": ">=1.14.4"',
-                        '"fabricloader": ">=0.18.4",\n    "minecraft": "~1.21.1",\n    "architectury": ">=13.0.11",\n    "fabric-api": ">=0.116.15"')
-          p.write_text(s, encoding='utf-8')
-          PY
+        run: python3 ../.github/scripts/patch_paybot_1211.py
 
       - name: Build Fabric jar
         working-directory: paybot
@@ -84,6 +43,8 @@ jobs:
           mkdir -p out
           find paybot/fabric/build/libs -maxdepth 1 -type f -name '*.jar' -print -exec cp {} out/ \; 2>/dev/null || true
           cp paybot/gradle.properties out/gradle.properties || true
+          cp paybot/fabric/src/main/resources/fabric.mod.json out/fabric.mod.json || true
+          tar -czf out/paybot-patched-source.tar.gz -C paybot common fabric build.gradle gradle.properties settings.gradle 2>/dev/null || true
 
       - name: Upload build
         if: always()
