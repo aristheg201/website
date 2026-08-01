@@ -1,0 +1,31 @@
+name: Fetch Forge and NeoForge API jars
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download API jars
+        run: |
+          set -euxo pipefail
+          mkdir -p out
+          curl -fL --retry 3 -o out/forge-1.21.1-52.1.16-universal.jar https://maven.minecraftforge.net/net/minecraftforge/forge/1.21.1-52.1.16/forge-1.21.1-52.1.16-universal.jar
+          curl -fL --retry 3 -o out/forge-1.21.1-52.1.16-sources.jar https://maven.minecraftforge.net/net/minecraftforge/forge/1.21.1-52.1.16/forge-1.21.1-52.1.16-sources.jar || true
+          curl -fL --retry 3 -o out/neoforge-21.1.244-universal.jar https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.244/neoforge-21.1.244-universal.jar
+          curl -fL --retry 3 -o out/neoforge-21.1.244-sources.jar https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.244/neoforge-21.1.244-sources.jar || true
+          find out -type f -size 0 -delete
+          sha256sum out/* > out/SHA256.txt
+          ls -lh out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forge-neoforge-api-jars
+          path: out/
+          if-no-files-found: error
