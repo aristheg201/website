@@ -27,7 +27,7 @@ jobs:
           gradle-version: '8.8'
           cache-disabled: true
 
-      - name: Clone and build the public PayBot dependency graph
+      - name: Clone and build PayBot dependency graph
         run: |
           git clone --depth 1 https://github.com/ShirozNguyen/Paybot.git paybot
           cd paybot
@@ -39,15 +39,18 @@ jobs:
 
           p = Path('common/src/main/java/com/naptien/compat/VanillaGuiBackend.java')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('new ItemLore(lore.stream().map(Component::literal).toList())',
-                        'new ItemLore(lore.stream().map(line -> (Component) Component.literal(line)).toList())')
+          old = 'new ItemLore(lore.stream().map(Component::literal).toList())'
+          new = 'new ItemLore(lore.stream().map(line -> (Component) Component.literal(line)).toList())'
+          if old in s:
+              s = s.replace(old, new)
           p.write_text(s, encoding='utf-8')
 
           p = Path('fabric/src/main/resources/quilt.mod.json')
           data = json.loads(p.read_text(encoding='utf-8'))
           deps = data['quilt_loader']['depends']
           for dep in deps:
-              if dep.get('id') == 'minecraft': dep['versions'] = '~1.21.1'
+              if dep.get('id') == 'minecraft':
+                  dep['versions'] = '~1.21.1'
           if not any(dep.get('id') == 'architectury' for dep in deps):
               deps.append({'id': 'architectury', 'versions': '>=13.0.11'})
           p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
@@ -56,23 +59,21 @@ jobs:
           s = p.read_text(encoding='utf-8')
           s = s.replace('    shadowCommon\n', '    shadowCommon\n    shade\n', 1)
           anchor = '    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }\n'
-          extra = anchor + '''
-
-    implementation 'org.yaml:snakeyaml:2.2'
-    implementation 'com.google.zxing:core:3.5.3'
-    implementation 'com.google.zxing:javase:3.5.3'
-    implementation 'org.nanohttpd:nanohttpd:2.3.1'
-    implementation('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }
-    implementation('com.mysql:mysql-connector-j:9.2.0') { transitive = false }
-
-    shade 'org.yaml:snakeyaml:2.2'
-    shade 'com.google.zxing:core:3.5.3'
-    shade 'com.google.zxing:javase:3.5.3'
-    shade 'org.nanohttpd:nanohttpd:2.3.1'
-    shade('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }
-    shade('com.mysql:mysql-connector-j:9.2.0') { transitive = false }
-'''
-          if anchor not in s: raise SystemExit('missing shadowCommon anchor')
+          extra = (anchor + '\n'
+                   + "    implementation 'org.yaml:snakeyaml:2.2'\n"
+                   + "    implementation 'com.google.zxing:core:3.5.3'\n"
+                   + "    implementation 'com.google.zxing:javase:3.5.3'\n"
+                   + "    implementation 'org.nanohttpd:nanohttpd:2.3.1'\n"
+                   + "    implementation('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }\n"
+                   + "    implementation('com.mysql:mysql-connector-j:9.2.0') { transitive = false }\n\n"
+                   + "    shade 'org.yaml:snakeyaml:2.2'\n"
+                   + "    shade 'com.google.zxing:core:3.5.3'\n"
+                   + "    shade 'com.google.zxing:javase:3.5.3'\n"
+                   + "    shade 'org.nanohttpd:nanohttpd:2.3.1'\n"
+                   + "    shade('org.xerial:sqlite-jdbc:3.49.1.0') { transitive = false }\n"
+                   + "    shade('com.mysql:mysql-connector-j:9.2.0') { transitive = false }\n")
+          if anchor not in s:
+              raise SystemExit('missing shadowCommon anchor')
           s = s.replace(anchor, extra, 1)
           s = s.replace('    configurations = [project.configurations.shadowCommon]\n',
                         '    configurations = [project.configurations.shadowCommon, project.configurations.shade]\n', 1)
