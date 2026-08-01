@@ -50,6 +50,10 @@ jobs:
               '    shadowCommon\n': '    shadowCommon\n    shade\n',
               '    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }\n':
                   '    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }\n\n'
+                  "    implementation 'org.yaml:snakeyaml:2.2'\n"
+                  "    implementation 'com.google.zxing:core:3.5.3'\n"
+                  "    implementation 'com.google.zxing:javase:3.5.3'\n"
+                  "    implementation 'org.nanohttpd:nanohttpd:2.3.1'\n\n"
                   "    shade 'org.yaml:snakeyaml:2.2'\n"
                   "    shade 'com.google.zxing:core:3.5.3'\n"
                   "    shade 'com.google.zxing:javase:3.5.3'\n"
@@ -63,21 +67,21 @@ jobs:
           }
           for old, new in replacements.items():
               if old not in s:
-                  raise SystemExit(f'Missing shading build block: {old!r}')
+                  raise SystemExit(f'Missing build block: {old!r}')
               s = s.replace(old, new, 1)
           p.write_text(s, encoding='utf-8')
           PY
 
-      - name: Build Fabric jar
+      - name: Build Fabric JAR
         working-directory: paybot
         run: gradle :fabric:build --stacktrace --no-daemon
 
-      - name: Validate full patch jar
+      - name: Validate full patch JAR
         working-directory: paybot
         run: |
           JAR=$(find fabric/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-dev.jar' ! -name '*-dev-shadow.jar' | head -n 1)
           test -n "$JAR"
-          unzip -t "$JAR"
+          unzip -t "$JAR" >/dev/null
           zipinfo -1 "$JAR" > jar-entries.txt
           grep -Fxq 'fi/iki/elonen/NanoHTTPD.class' jar-entries.txt
           grep -Fxq 'com/google/zxing/MultiFormatWriter.class' jar-entries.txt
@@ -91,10 +95,9 @@ jobs:
       - name: Smoke-test Fabric server startup
         working-directory: paybot
         run: |
-          mkdir -p run fabric/run
-          printf 'eula=true\n' > run/eula.txt
-          cp run/eula.txt fabric/run/eula.txt
-          cat > run/server.properties <<'EOF'
+          mkdir -p fabric/run
+          printf 'eula=true\n' > fabric/run/eula.txt
+          cat > fabric/run/server.properties <<'EOF'
           online-mode=false
           server-port=25575
           view-distance=2
@@ -103,36 +106,44 @@ jobs:
           level-type=minecraft:flat
           motd=PayBot smoke test
           EOF
-          cp run/server.properties fabric/run/server.properties
-          rm -f smoke-input
+
+          rm -f smoke-input smoke.log smoke-ok
           mkfifo smoke-input
-          : > smoke.log
-          (
-            for i in $(seq 1 180); do
-              if grep -q 'Done (' smoke.log; then
-                sleep 8
-                printf 'stop\n'
-                exit 0
-              fi
-              if grep -Eq 'Could not execute entrypoint stage|Failed to start the minecraft server' smoke.log; then
-                printf 'stop\n'
-                exit 0
-              fi
-              sleep 1
-            done
-            printf 'stop\n'
-          ) > smoke-input &
-          set +e
-          timeout 240s gradle :fabric:runServer --no-daemon < smoke-input > smoke.log 2>&1
-          RC=$?
-          set -e
-          echo "runServer exit code: $RC"
-          tail -n 220 smoke.log
-          grep -q 'Done (' smoke.log
+          exec 3<>smoke-input
+          gradle :fabric:runServer --no-daemon < smoke-input > smoke.log 2>&1 &
+          GPID=$!
+
+          for i in $(seq 1 300); do
+            if grep -q 'Done (' smoke.log; then
+              touch smoke-ok
+              sleep 8
+              printf 'stop\n' >&3
+              break
+            fi
+            if ! kill -0 "$GPID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          for i in $(seq 1 60); do
+            if ! kill -0 "$GPID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if kill -0 "$GPID" 2>/dev/null; then
+            kill "$GPID" || true
+          fi
+          wait "$GPID" || true
+          exec 3>&-
+
+          tail -n 260 smoke.log
+          test -f smoke-ok
           grep -q '\[PayBot\]' smoke.log
           ! grep -Eq 'NoSuchMethodError|NoClassDefFoundError: fi/iki/elonen/NanoHTTPD|Could not execute entrypoint stage.*paybot' smoke.log
 
-      - name: Collect build output
+      - name: Collect output
         if: always()
         run: |
           mkdir -p out
@@ -142,7 +153,7 @@ jobs:
           cp paybot/smoke.log out/server-smoke.log 2>/dev/null || true
           tar -czf out/paybot-patched-source.tar.gz -C paybot common fabric build.gradle gradle.properties settings.gradle 2>/dev/null || true
 
-      - name: Upload build
+      - name: Upload output
         if: always()
         uses: actions/upload-artifact@v4
         with:
