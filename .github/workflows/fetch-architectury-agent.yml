@@ -1,0 +1,28 @@
+name: Fetch Architectury transformer agent
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download agent artifact
+        run: |
+          mkdir -p out
+          BASE=https://maven.architectury.dev/dev/architectury/architectury-transformer/5.2.91
+          curl -fL --retry 3 -o out/architectury-transformer-5.2.91-agent.jar "$BASE/architectury-transformer-5.2.91-agent.jar"
+          curl -fL --retry 3 -o out/architectury-transformer-5.2.91.pom "$BASE/architectury-transformer-5.2.91.pom"
+          unzip -t out/architectury-transformer-5.2.91-agent.jar >/dev/null
+          sha256sum out/* > out/SHA256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: architectury-transformer-5.2.91-agent
+          path: out/
+          if-no-files-found: error
