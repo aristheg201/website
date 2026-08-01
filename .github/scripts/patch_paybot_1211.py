@@ -65,12 +65,12 @@ s = replace_checked(
     s,
     """            if (!stack.hasTag()) continue;
             net.minecraft.nbt.CompoundTag nbt = stack.getTag();
-            if (nbt != null && nbt.contains(\"paybot_invoice_id\")) {""",
+            if (nbt == null || !nbt.contains(\"paybot_invoice_id\")) continue;""",
     """            net.minecraft.world.item.component.CustomData customData =
                     stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
             if (customData == null || customData.isEmpty()) continue;
             net.minecraft.nbt.CompoundTag nbt = customData.copyTag();
-            if (nbt.contains(\"paybot_invoice_id\")) {""",
+            if (!nbt.contains(\"paybot_invoice_id\")) continue;""",
     "PayBot join QR cleanup custom data",
 )
 write(str(p), s)
