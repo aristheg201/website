@@ -1,0 +1,238 @@
+name: PayBot hardcoded Forge and NeoForge 1.21.1
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 8.8
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+
+      - name: Clone original hardcoded PayBot source
+        run: git clone --depth 1 https://github.com/ShirozNguyen/Paybot.git paybot
+
+      - name: Apply compatibility fixes only
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          python3 ../.github/scripts/patch_paybot_1211.py
+          python3 ../.github/scripts/patch_paybot_hardcoded_forge_neoforge_1211.py
+
+          test ! -e common/src/main/resources/messages.yml
+          test ! -e common/src/main/java/com/naptien/config/MessageManager.java
+          grep -q 'public static final int\[\] DENOMS' common/src/main/java/com/naptien/gui/GuiUtil.java
+          grep -q '10_000' common/src/main/java/com/naptien/gui/GuiUtil.java
+          grep -q '1_000_000' common/src/main/java/com/naptien/gui/GuiUtil.java
+          ! grep -Rqs 'denominations:' common/src/main/resources common/src/main/java
+
+      - name: Build Forge and NeoForge JARs
+        working-directory: paybot
+        run: gradle :forge:build :neoforge:build --stacktrace --no-daemon
+
+      - name: Locate production JARs
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          FORGE_JAR=$(find forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-dev.jar' ! -name '*-dev-shadow.jar' | head -n 1)
+          NEOFORGE_JAR=$(find neoforge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-dev.jar' ! -name '*-dev-shadow.jar' | head -n 1)
+          test -n "$FORGE_JAR"
+          test -n "$NEOFORGE_JAR"
+          echo "FORGE_JAR=$FORGE_JAR" >> "$GITHUB_ENV"
+          echo "NEOFORGE_JAR=$NEOFORGE_JAR" >> "$GITHUB_ENV"
+
+      - name: Validate both production JARs
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          unzip -t "$FORGE_JAR" >/dev/null
+          unzip -t "$NEOFORGE_JAR" >/dev/null
+
+          zipinfo -1 "$FORGE_JAR" > forge-entries.txt
+          zipinfo -1 "$NEOFORGE_JAR" > neoforge-entries.txt
+
+          grep -Fxq 'META-INF/mods.toml' forge-entries.txt
+          grep -Fxq 'com/naptien/forge/PayBotForgeInit.class' forge-entries.txt
+          ! grep -Fxq 'META-INF/neoforge.mods.toml' forge-entries.txt
+
+          grep -Fxq 'META-INF/neoforge.mods.toml' neoforge-entries.txt
+          grep -Fxq 'com/naptien/neoforge/PayBotNeoForgeInit.class' neoforge-entries.txt
+          ! grep -Fxq 'META-INF/mods.toml' neoforge-entries.txt
+
+          for JAR in "$FORGE_JAR" "$NEOFORGE_JAR"; do
+            ENTRIES=$(mktemp)
+            zipinfo -1 "$JAR" > "$ENTRIES"
+            grep -Fxq 'fi/iki/elonen/NanoHTTPD.class' "$ENTRIES"
+            grep -Fxq 'com/google/zxing/MultiFormatWriter.class' "$ENTRIES"
+            grep -Fxq 'com/google/zxing/client/j2se/MatrixToImageWriter.class' "$ENTRIES"
+            grep -Fxq 'org/yaml/snakeyaml/Yaml.class' "$ENTRIES"
+            grep -Fxq 'org/sqlite/JDBC.class' "$ENTRIES"
+            grep -Fxq 'com/mysql/cj/jdbc/Driver.class' "$ENTRIES"
+            grep -Fxq 'com/zaxxer/hikari/HikariDataSource.class' "$ENTRIES"
+            grep -Eq '^org/sqlite/native/Linux/.*/libsqlitejdbc\.so$' "$ENTRIES"
+            ! grep -Fxq 'messages.yml' "$ENTRIES"
+            ! grep -Fq 'MessageManager.class' "$ENTRIES"
+            ! unzip -p "$JAR" com/naptien/PayBotMod.class | strings | grep -Fxq 'method_7985'
+          done
+
+          unzip -p "$FORGE_JAR" META-INF/mods.toml | grep -q 'versionRange="\[1.21.1,1.21.2)"'
+          unzip -p "$FORGE_JAR" META-INF/mods.toml | grep -q 'versionRange="\[52.1.0,)"'
+          unzip -p "$NEOFORGE_JAR" META-INF/neoforge.mods.toml | grep -q 'versionRange="\[1.21.1,1.21.2)"'
+          unzip -p "$NEOFORGE_JAR" META-INF/neoforge.mods.toml | grep -q 'versionRange="\[21.1.0,)"'
+
+      - name: Smoke-test Forge dedicated server
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          mkdir -p forge/run
+          printf 'eula=true\n' > forge/run/eula.txt
+          cat > forge/run/server.properties <<'EOF'
+          online-mode=false
+          enforce-secure-profile=false
+          server-port=25575
+          view-distance=2
+          simulation-distance=2
+          generate-structures=false
+          level-type=minecraft:flat
+          motd=PayBot Forge smoke test
+          EOF
+
+          rm -f forge-smoke-input forge-smoke.log forge-smoke-ok
+          mkfifo forge-smoke-input
+          exec 3<>forge-smoke-input
+          gradle :forge:runServer --no-daemon < forge-smoke-input > forge-smoke.log 2>&1 &
+          GPID=$!
+          for i in $(seq 1 360); do
+            if grep -q 'Kết nối SQLite thành công' forge-smoke.log && grep -q 'Done (' forge-smoke.log; then
+              touch forge-smoke-ok
+              sleep 8
+              printf 'stop\n' >&3
+              break
+            fi
+            if ! kill -0 "$GPID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          for i in $(seq 1 90); do
+            if ! kill -0 "$GPID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$GPID" 2>/dev/null; then kill "$GPID" || true; fi
+          wait "$GPID" || true
+          exec 3>&-
+          tail -n 350 forge-smoke.log
+          test -f forge-smoke-ok
+          ! grep -Eq 'NoSuchMethodError|NoClassDefFoundError|ClassNotFoundException|Failed to load mod|Could not execute entrypoint' forge-smoke.log
+
+      - name: Smoke-test NeoForge dedicated server
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          mkdir -p neoforge/run
+          printf 'eula=true\n' > neoforge/run/eula.txt
+          cat > neoforge/run/server.properties <<'EOF'
+          online-mode=false
+          enforce-secure-profile=false
+          server-port=25576
+          view-distance=2
+          simulation-distance=2
+          generate-structures=false
+          level-type=minecraft:flat
+          motd=PayBot NeoForge smoke test
+          EOF
+
+          rm -f neoforge-smoke-input neoforge-smoke.log neoforge-smoke-ok
+          mkfifo neoforge-smoke-input
+          exec 3<>neoforge-smoke-input
+          gradle :neoforge:runServer --no-daemon < neoforge-smoke-input > neoforge-smoke.log 2>&1 &
+          GPID=$!
+          for i in $(seq 1 360); do
+            if grep -q 'Kết nối SQLite thành công' neoforge-smoke.log && grep -q 'Done (' neoforge-smoke.log; then
+              touch neoforge-smoke-ok
+              sleep 8
+              printf 'stop\n' >&3
+              break
+            fi
+            if ! kill -0 "$GPID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          for i in $(seq 1 90); do
+            if ! kill -0 "$GPID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$GPID" 2>/dev/null; then kill "$GPID" || true; fi
+          wait "$GPID" || true
+          exec 3>&-
+          tail -n 350 neoforge-smoke.log
+          test -f neoforge-smoke-ok
+          ! grep -Eq 'NoSuchMethodError|NoClassDefFoundError|ClassNotFoundException|Failed to load mod|Could not execute entrypoint' neoforge-smoke.log
+
+      - name: Package deliverables
+        if: always()
+        working-directory: paybot
+        run: |
+          set -euxo pipefail
+          mkdir -p ../out/forge-panel/mods ../out/neoforge-panel/mods ../out/source
+
+          if [ -f "${FORGE_JAR:-}" ]; then
+            cp "$FORGE_JAR" ../out/PayBot-Mod-Forge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
+            cp "$FORGE_JAR" ../out/forge-panel/mods/PayBot-Mod-Forge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
+          fi
+          if [ -f "${NEOFORGE_JAR:-}" ]; then
+            cp "$NEOFORGE_JAR" ../out/PayBot-Mod-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
+            cp "$NEOFORGE_JAR" ../out/neoforge-panel/mods/PayBot-Mod-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX.jar
+          fi
+
+          cat > ../out/forge-panel/CAI_DAT.txt <<'EOF'
+          Dung cho Minecraft 1.21.1 Forge 52.1.x, Java 21.
+          Stop server, xoa JAR PayBot Forge/NeoForge cu, extract tai root server.
+          Chi cai mot ban dung voi loader. Can Architectury API 13.0.11 cho Forge.
+          Ban nay giu nguyen message, GUI va menh gia hardcode cu.
+          EOF
+          cat > ../out/neoforge-panel/CAI_DAT.txt <<'EOF'
+          Dung cho Minecraft 1.21.1 NeoForge 21.1.x, Java 21.
+          Stop server, xoa JAR PayBot Forge/NeoForge cu, extract tai root server.
+          Chi cai mot ban dung voi loader. Can Architectury API 13.0.11 cho NeoForge.
+          Ban nay giu nguyen message, GUI va menh gia hardcode cu.
+          EOF
+
+          tar -czf ../out/PayBot-Forge-5.5.0-MC1.21.1-HARDCODED-FIX-PANEL.tar.gz -C ../out/forge-panel .
+          tar -czf ../out/PayBot-NeoForge-5.5.0-MC1.21.1-HARDCODED-FIX-PANEL.tar.gz -C ../out/neoforge-panel .
+          tar -czf ../out/PayBot-5.5.0-MC1.21.1-HARDCODED-FIX-SOURCE.tar.gz common forge neoforge build.gradle settings.gradle gradle.properties
+
+          cp forge-smoke.log ../out/forge-server-smoke.log 2>/dev/null || true
+          cp neoforge-smoke.log ../out/neoforge-server-smoke.log 2>/dev/null || true
+          cat > ../out/VALIDATION.txt <<'EOF'
+          Forge and NeoForge are separate production JARs.
+          Minecraft API ported to 1.21.1 data components.
+          Original hardcoded messages, GUI text and denomination arrays preserved.
+          No messages.yml or dynamic denomination system included.
+          NanoHTTPD, ZXing, SnakeYAML, SQLite, MySQL and HikariCP embedded.
+          Both dedicated-server smoke tests must reach Done and connect SQLite for CI to pass.
+          EOF
+          (cd ../out && sha256sum *.jar *.tar.gz > SHA256.txt)
+
+      - name: Upload deliverables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paybot-hardcoded-forge-neoforge-1.21.1
+          path: out/
+          if-no-files-found: error
