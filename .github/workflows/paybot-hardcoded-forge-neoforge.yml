@@ -3,6 +3,7 @@ name: PayBot hardcoded Forge and NeoForge 1.21.1
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -224,5 +225,3 @@ jobs:
           name: paybot-hardcoded-forge-neoforge-1.21.1
           path: out/
           if-no-files-found: error
-
-# revision 2
