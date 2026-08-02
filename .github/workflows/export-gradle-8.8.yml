@@ -1,0 +1,36 @@
+name: Export Gradle 8.8 distribution
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+          cache-disabled: true
+      - name: Package Gradle installation
+        shell: bash
+        run: |
+          set -euxo pipefail
+          GRADLE_BIN="$(command -v gradle)"
+          GRADLE_HOME="$(cd "$(dirname "$GRADLE_BIN")/.." && pwd)"
+          gradle --version
+          test -f "$GRADLE_HOME/lib/gradle-launcher-8.8.jar"
+          tar -czf gradle-8.8-linux.tar.gz -C "$(dirname "$GRADLE_HOME")" "$(basename "$GRADLE_HOME")"
+          sha256sum gradle-8.8-linux.tar.gz > gradle-8.8-linux.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gradle-8.8-linux
+          path: |
+            gradle-8.8-linux.tar.gz
+            gradle-8.8-linux.tar.gz.sha256
+          if-no-files-found: error
