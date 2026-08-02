@@ -1,0 +1,35 @@
+name: Export Fabric dev runtime dependencies
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Maven artifacts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          base="$PWD/fabric-dev-runtime-maven"
+          dli="$base/net/fabricmc/dev-launch-injector/0.2.1+build.8"
+          tca="$base/net/minecrell/terminalconsoleappender/1.3.0"
+          mkdir -p "$dli" "$tca"
+          curl -fL 'https://maven.fabricmc.net/net/fabricmc/dev-launch-injector/0.2.1%2Bbuild.8/dev-launch-injector-0.2.1%2Bbuild.8.jar' -o "$dli/dev-launch-injector-0.2.1+build.8.jar"
+          curl -fL 'https://maven.fabricmc.net/net/fabricmc/dev-launch-injector/0.2.1%2Bbuild.8/dev-launch-injector-0.2.1%2Bbuild.8.pom' -o "$dli/dev-launch-injector-0.2.1+build.8.pom"
+          curl -fL 'https://repo.papermc.io/repository/maven-public/net/minecrell/terminalconsoleappender/1.3.0/terminalconsoleappender-1.3.0.jar' -o "$tca/terminalconsoleappender-1.3.0.jar"
+          curl -fL 'https://repo.papermc.io/repository/maven-public/net/minecrell/terminalconsoleappender/1.3.0/terminalconsoleappender-1.3.0.pom' -o "$tca/terminalconsoleappender-1.3.0.pom"
+          find "$base" -type f -exec sha256sum {} + > SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fabric-dev-runtime-maven
+          path: |
+            fabric-dev-runtime-maven/
+            SHA256.txt
+          if-no-files-found: error
