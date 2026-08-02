@@ -18,7 +18,7 @@ jobs:
         run: |
           set -euxo pipefail
           base="$PWD/jline-maven/org/jline"
-          for artifact in jline-reader jline-terminal jline-native; do
+          for artifact in jline-reader jline-terminal; do
             dir="$base/$artifact/3.20.0"
             mkdir -p "$dir"
             curl -fL "https://repo1.maven.org/maven2/org/jline/$artifact/3.20.0/$artifact-3.20.0.jar" -o "$dir/$artifact-3.20.0.jar"
