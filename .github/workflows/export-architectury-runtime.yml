@@ -1,0 +1,31 @@
+name: Export Architectury transformer runtime
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download transformer runtime
+        shell: bash
+        run: |
+          set -euxo pipefail
+          out="architectury-maven/dev/architectury/architectury-transformer/5.2.91"
+          mkdir -p "$out"
+          curl -fL 'https://maven.architectury.dev/dev/architectury/architectury-transformer/5.2.91/architectury-transformer-5.2.91-runtime.jar' -o "$out/architectury-transformer-5.2.91-runtime.jar"
+          curl -fL 'https://maven.architectury.dev/dev/architectury/architectury-transformer/5.2.91/architectury-transformer-5.2.91.pom' -o "$out/architectury-transformer-5.2.91.pom"
+          find architectury-maven -type f -exec sha256sum {} + > SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: architectury-transformer-5.2.91-runtime
+          path: |
+            architectury-maven/
+            SHA256.txt
+          if-no-files-found: error
