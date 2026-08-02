@@ -1,0 +1,34 @@
+name: Export JLine 3.20.0 runtime
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download JLine Maven artifacts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          base="$PWD/jline-maven/org/jline"
+          for artifact in jline-reader jline-terminal jline-native; do
+            dir="$base/$artifact/3.20.0"
+            mkdir -p "$dir"
+            curl -fL "https://repo1.maven.org/maven2/org/jline/$artifact/3.20.0/$artifact-3.20.0.jar" -o "$dir/$artifact-3.20.0.jar"
+            curl -fL "https://repo1.maven.org/maven2/org/jline/$artifact/3.20.0/$artifact-3.20.0.pom" -o "$dir/$artifact-3.20.0.pom"
+          done
+          find jline-maven -type f -exec sha256sum {} + > SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jline-3.20.0-maven
+          path: |
+            jline-maven/
+            SHA256.txt
+          if-no-files-found: error
