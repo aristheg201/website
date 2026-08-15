@@ -1,0 +1,65 @@
+name: Build SkiesShop BEconomy Fix
+
+on:
+  push:
+    branches:
+      - agent/skiesshop-beconomy-fix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout build host
+        uses: actions/checkout@v4
+
+      - name: Checkout SkiesShop fixed upstream commit
+        uses: actions/checkout@v4
+        with:
+          repository: PokeSkies/SkiesShop
+          ref: 8c0eae56e7283892a3f7cba381860ee8a2e211eb
+          path: SkiesShop
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build full remapped JAR
+        working-directory: SkiesShop
+        run: |
+          chmod +x gradlew
+          ./gradlew clean remapJar --no-daemon --stacktrace
+
+      - name: Validate BEconomy package and artifact size
+        working-directory: SkiesShop
+        run: |
+          set -euo pipefail
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*fabric*1.21.1*.jar' ! -name '*sources*' | head -n1)
+          test -n "$JAR"
+          echo "JAR=$JAR"
+          ls -lh "$JAR"
+          test $(stat -c%s "$JAR") -gt 1000000
+          unzip -p "$JAR" com/pokeskies/skiesshop/economy/services/BEconomyService.class | strings | grep -q 'org/krripe/beconomy/api/BEconomy'
+          if unzip -p "$JAR" com/pokeskies/skiesshop/economy/services/BEconomyService.class | strings | grep -q 'org/beconomy/api/BEconomy'; then
+            echo 'Old BEconomy package still present' >&2
+            exit 1
+          fi
+          cp "$JAR" ../SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar
+          sha256sum ../SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar > ../SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar.sha256.txt
+
+      - name: Upload patched full JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkiesShop-BEconomy15-FULL-JAR
+          path: |
+            SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar
+            SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar.sha256.txt
+          if-no-files-found: error
