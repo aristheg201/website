@@ -16,12 +16,81 @@ jobs:
       - name: Checkout build host
         uses: actions/checkout@v4
 
-      - name: Checkout SkiesShop fixed upstream commit
+      - name: Checkout SkiesShop 1.0.2
         uses: actions/checkout@v4
         with:
           repository: PokeSkies/SkiesShop
           ref: 8c0eae56e7283892a3f7cba381860ee8a2e211eb
           path: SkiesShop
+
+      - name: Patch BEconomyService for runtime BEconomy 1.5
+        working-directory: SkiesShop
+        shell: bash
+        run: |
+          cat > src/main/kotlin/com/pokeskies/skiesshop/economy/services/BEconomyService.kt <<'KOTLIN'
+          package com.pokeskies.skiesshop.economy.services
+
+          import com.pokeskies.skiesshop.economy.IEconomyService
+          import com.pokeskies.skiesshop.utils.Utils
+          import net.kyori.adventure.text.Component
+          import net.minecraft.server.level.ServerPlayer
+          import java.math.BigDecimal
+
+          /**
+           * SVFrame compatibility implementation for BEconomy 1.5.
+           *
+           * PokeSkies 1.0.2 was compiled against an older package while the
+           * server runtime exposes org.krripe.beconomy.api.BEconomy. Reflection
+           * avoids depending on the stale compile-only jar bundled in upstream's
+           * libs/ directory while still calling the exact BEconomy 1.5 API.
+           */
+          class BEconomyService : IEconomyService {
+              private val beconomyClass: Class<*> by lazy {
+                  Class.forName("org.krripe.beconomy.api.BEconomy")
+              }
+
+              init {
+                  Utils.printInfo("BEconomy 1.5 has been found and loaded for Currency actions/requirements!")
+              }
+
+              private fun api(): Any {
+                  val instance = beconomyClass.getField("INSTANCE").get(null)
+                  return beconomyClass.getMethod("getAPI").invoke(instance)
+                      ?: error("BEconomy 1.5 API is not initialized")
+              }
+
+              private fun call(name: String, vararg args: Any?): Any? {
+                  val api = api()
+                  val method = api.javaClass.methods.firstOrNull {
+                      it.name == name && it.parameterCount == args.size
+                  } ?: error("BEconomy 1.5 API method not found: $name/${args.size}")
+                  return method.invoke(api, *args)
+              }
+
+              override fun balance(player: ServerPlayer, currency: String): Double {
+                  return (call("getBalance", player.uuid, currency) as BigDecimal).toDouble()
+              }
+
+              override fun withdraw(player: ServerPlayer, amount: Double, currency: String): Boolean {
+                  return call("subtractBalance", player.uuid, BigDecimal.valueOf(amount), currency) as Boolean
+              }
+
+              override fun deposit(player: ServerPlayer, amount: Double, currency: String): Boolean {
+                  call("addBalance", player.uuid, BigDecimal.valueOf(amount), currency)
+                  return true
+              }
+
+              override fun set(player: ServerPlayer, amount: Double, currency: String): Boolean {
+                  call("setBalance", player.uuid, BigDecimal.valueOf(amount), currency)
+                  return true
+              }
+
+              override fun name(amount: Double, currency: String): Component? {
+                  if (currency.isEmpty()) return null
+                  return Component.text(call("getCurrencySymbol", currency) as String)
+              }
+          }
+          KOTLIN
 
       - name: Setup Java 21
         uses: actions/setup-java@v4
@@ -38,7 +107,7 @@ jobs:
           chmod +x gradlew
           ./gradlew clean remapJar --no-daemon --stacktrace
 
-      - name: Validate BEconomy package and artifact size
+      - name: Validate full JAR and BEconomy fix
         working-directory: SkiesShop
         run: |
           set -euo pipefail
@@ -47,9 +116,12 @@ jobs:
           echo "JAR=$JAR"
           ls -lh "$JAR"
           test $(stat -c%s "$JAR") -gt 1000000
-          unzip -p "$JAR" com/pokeskies/skiesshop/economy/services/BEconomyService.class | strings | grep -q 'org/krripe/beconomy/api/BEconomy'
+          unzip -l "$JAR" | grep -q 'fabric.mod.json'
+          unzip -l "$JAR" | grep -q 'com/pokeskies/skiesshop/SkiesShop.class'
+          unzip -l "$JAR" | grep -q 'com/pokeskies/skiesshop/economy/services/BEconomyService.class'
+          unzip -p "$JAR" com/pokeskies/skiesshop/economy/services/BEconomyService.class | strings | grep -q 'org.krripe.beconomy.api.BEconomy'
           if unzip -p "$JAR" com/pokeskies/skiesshop/economy/services/BEconomyService.class | strings | grep -q 'org/beconomy/api/BEconomy'; then
-            echo 'Old BEconomy package still present' >&2
+            echo 'Old BEconomy symbolic package still present' >&2
             exit 1
           fi
           cp "$JAR" ../SkiesShop-fabric-1.21.1-1.0.2-BEconomy15FIX.jar
