@@ -1,0 +1,14 @@
+{
+  "brand": "Bestiary Launcher",
+  "channelUrl": "https://raw.githubusercontent.com/aristheg201/website/main/svf-client/channels/stable.json",
+  "manifestUrl": "",
+  "manifestSignatureUrl": "",
+  "announcementsUrl": "https://raw.githubusercontent.com/aristheg201/website/main/svf-client/announcements.json",
+  "discordUrl": "",
+  "serverHost": "",
+  "serverPort": 25565,
+  "quickPlay": false,
+  "defaultMinecraftVersion": "1.21.1",
+  "defaultFabricLoader": "0.18.4",
+  "supportUrl": ""
+}
