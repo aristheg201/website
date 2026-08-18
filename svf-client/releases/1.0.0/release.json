@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "title": "Bestiary Client 1.0.0",
+  "notes": "Bestiary Client baseline",
+  "manifest": "https://raw.githubusercontent.com/aristheg201/website/main/svf-client/releases/1.0.0/manifest.json",
+  "signature": "https://raw.githubusercontent.com/aristheg201/website/main/svf-client/releases/1.0.0/manifest.sig"
+}
