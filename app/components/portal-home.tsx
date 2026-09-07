@@ -2,47 +2,57 @@ import Link from "next/link";
 import { DesktopPortalNav, MobilePortalHeader, MobilePortalNav } from "./portal-shell";
 import { DISCORD_URL, LAUNCHER_VERSION } from "../data/portal";
 
+const LOGO = `${process.env.NEXT_PUBLIC_BASE_PATH ?? "/website"}/brand/bestiary-logo.webp`;
+
 function DesktopHome() {
   return (
     <div className="portal-desktop desktop-only">
       <DesktopPortalNav active="home" />
-      <main className="portal-main">
-        <section className="portal-hero">
-          <div className="portal-eyebrow">SVFRAME NETWORK · COBBLEMON 1.8</div>
-          <h1>Mọi thứ bạn cần.<br/><span>Ở một chỗ.</span></h1>
-          <p>Tra cứu Pokémon và Fakemon theo biome, điều kiện spawn và độ hiếm. Tải launcher chính thức hoặc vào Discord của server trong một cú nhấp.</p>
-          <div className="portal-actions">
-            <Link className="portal-primary" href="/wiki">Mở World Dex <span>→</span></Link>
-            <Link className="portal-secondary" href="/play">Tải Launcher</Link>
+      <main className="portal-main home-main">
+        <section className="home-hero-redesign">
+          <div className="hero-copy">
+            <div className="portal-eyebrow">SVFRAME COBBLEMON · BESTIARY BEAST</div>
+            <h1>Khám phá server.<br/><span>Không cần mò.</span></h1>
+            <p>Tra spawn Pokémon và Fakemon, xem biome/condition, tải launcher và vào Discord — tất cả gom đúng chỗ, không lặp thông tin.</p>
+            <div className="portal-actions">
+              <Link className="portal-primary" href="/wiki">Mở World Dex <span>→</span></Link>
+              <Link className="portal-secondary" href="/play">Tải Launcher</Link>
+            </div>
+            <div className="hero-mini-stats">
+              <span><b>1.21.1</b><small>Minecraft</small></span>
+              <span><b>1.8</b><small>Cobblemon</small></span>
+              <span><b>Pokémon + Fakemon</b><small>Server Dex</small></span>
+            </div>
+          </div>
+          <div className="hero-brand-panel">
+            <div className="hero-logo-glow" />
+            <img src={LOGO} alt="Bestiary Beast" />
+            <div className="hero-brand-caption"><span className="status-dot"/><b>SVFrame Network</b><small>Poké Portal</small></div>
           </div>
         </section>
 
-        <section className="portal-feature-grid">
-          <Link className="portal-feature-card dex-card" href="/wiki">
-            <small>01 · TRA CỨU</small>
-            <strong>World Dex</strong>
-            <p>Pokémon, Fakemon, custom form, biome, thời gian, level và condition spawn.</p>
-            <span>Tra cứu ngay →</span>
+        <section className="home-action-row">
+          <Link className="home-action primary-action" href="/wiki">
+            <span className="action-icon">⌕</span>
+            <div><small>TRA CỨU</small><strong>World Dex</strong><p>Biome · time · rarity · herd · alpha</p></div>
+            <b>→</b>
           </Link>
-          <Link className="portal-feature-card play-card" href="/play">
-            <small>02 · PLAY</small>
-            <strong>Bestiary Launcher</strong>
-            <p>Windows · v{LAUNCHER_VERSION} · cài đặt và cập nhật client của server.</p>
-            <span>Tải launcher →</span>
+          <Link className="home-action" href="/play">
+            <span className="action-icon">↓</span>
+            <div><small>CLIENT</small><strong>Launcher</strong><p>Windows v{LAUNCHER_VERSION} · Android soon</p></div>
+            <b>→</b>
           </Link>
-          <a className="portal-feature-card discord-card" href={DISCORD_URL} target="_blank" rel="noreferrer">
-            <small>03 · COMMUNITY</small>
-            <strong>Discord</strong>
-            <p>Thông báo, hỗ trợ, event, trao đổi và cập nhật mới nhất của SVFrame.</p>
-            <span>Tham gia Discord ↗</span>
+          <a className="home-action" href={DISCORD_URL} target="_blank" rel="noreferrer">
+            <span className="action-icon">◆</span>
+            <div><small>COMMUNITY</small><strong>Discord</strong><p>Event · hỗ trợ · thông báo</p></div>
+            <b>↗</b>
           </a>
         </section>
 
-        <section className="portal-strip">
-          <div><small>SERVER</small><strong>SVFrame Cobblemon</strong></div>
-          <div><small>MINECRAFT</small><strong>1.21.1</strong></div>
-          <div><small>COBBLEMON</small><strong>1.8</strong></div>
-          <div><small>DEX</small><strong>Pokémon + Fakemon</strong></div>
+        <section className="home-highlight-band">
+          <div><small>WORLD DEX</small><strong>Tìm đúng chỗ spawn, nhanh hơn.</strong></div>
+          <p>Không cần nhớ lệnh hay lục Discord. Search tên Pokémon/Fakemon rồi lọc biome, thời gian, độ hiếm và loại spawn.</p>
+          <Link href="/wiki">Tra cứu ngay →</Link>
         </section>
       </main>
     </div>
@@ -53,25 +63,25 @@ function MobileHome() {
   return (
     <div className="portal-mobile mobile-only">
       <MobilePortalHeader title="Home" />
-      <main>
-        <section className="mobile-hero-card">
+      <main className="mobile-home-main">
+        <section className="mobile-brand-hero">
+          <img src={LOGO} alt="Bestiary Beast" />
           <div className="portal-eyebrow">SVFRAME · COBBLEMON 1.8</div>
-          <h1>Poké Portal</h1>
-          <p>Tra spawn. Tải launcher. Vào Discord.</p>
-          <Link className="portal-primary" href="/wiki">Tra Pokémon <span>→</span></Link>
+          <h1>Mở Dex.<br/>Biết spawn.</h1>
+          <p>Pokémon, Fakemon, launcher và Discord trong một portal gọn.</p>
+          <Link className="portal-primary full" href="/wiki">Tra cứu ngay <span>→</span></Link>
         </section>
 
-        <section className="mobile-quick-grid">
-          <Link href="/wiki"><i>⌕</i><strong>World Dex</strong><small>Spawn & biome</small></Link>
-          <Link href="/play"><i>↓</i><strong>Launcher</strong><small>Windows v{LAUNCHER_VERSION}</small></Link>
-          <a href={DISCORD_URL} target="_blank" rel="noreferrer"><i>◈</i><strong>Discord</strong><small>Community</small></a>
+        <section className="mobile-action-stack">
+          <Link href="/wiki"><i>⌕</i><div><strong>World Dex</strong><small>Spawn · biome · condition</small></div><b>→</b></Link>
+          <Link href="/play"><i>↓</i><div><strong>Launcher</strong><small>Windows v{LAUNCHER_VERSION} · Android soon</small></div><b>→</b></Link>
+          <a href={DISCORD_URL} target="_blank" rel="noreferrer"><i>◆</i><div><strong>Discord</strong><small>Community & support</small></div><b>↗</b></a>
         </section>
 
-        <section className="mobile-info-card">
-          <small>SERVER BUILD</small>
-          <div><span>Minecraft</span><b>1.21.1</b></div>
-          <div><span>Cobblemon</span><b>1.8</b></div>
-          <div><span>Nội dung</span><b>Pokémon + Fakemon</b></div>
+        <section className="mobile-build-strip">
+          <span><b>1.21.1</b><small>Minecraft</small></span>
+          <span><b>1.8</b><small>Cobblemon</small></span>
+          <span><b>LIVE</b><small>Server Dex</small></span>
         </section>
       </main>
       <MobilePortalNav active="home" />
@@ -79,6 +89,4 @@ function MobileHome() {
   );
 }
 
-export default function PortalHome() {
-  return <><DesktopHome/><MobileHome/></>;
-}
+export default function PortalHome() { return <><DesktopHome/><MobileHome/></>; }
