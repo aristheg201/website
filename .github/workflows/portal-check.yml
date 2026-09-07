@@ -1,8 +1,8 @@
-name: Check Poké Portal V1
+name: Check Poké Portal
 
 on:
   push:
-    branches: [feature/world-dex-launcher-v1]
+    branches: [feature/world-dex-launcher-v1, feature/cobblemon-1.8-dex-reindex]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Build Cobblemon 1.8 Dex data
+        run: python3 scripts/build-cobblemon18-dex.py
       - run: npm run check
       - run: npm run build
         env:

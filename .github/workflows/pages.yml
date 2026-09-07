@@ -1,4 +1,4 @@
-name: Deploy Hunter Network to GitHub Pages
+name: Deploy SVFrame Poké Portal to GitHub Pages
 
 on:
   push:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build Cobblemon 1.8 Dex data
+        run: python3 scripts/build-cobblemon18-dex.py
 
       - name: Type check
         run: npm run check
