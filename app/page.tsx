@@ -1,5 +1,5 @@
-import Storefront from "./components/storefront";
+import PortalHome from "./components/portal-home";
 
 export default function Home() {
-  return <Storefront />;
+  return <PortalHome />;
 }
