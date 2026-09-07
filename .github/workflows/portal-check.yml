@@ -3,6 +3,8 @@ name: Check Poké Portal V1
 on:
   push:
     branches: [feature/world-dex-launcher-v1]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
