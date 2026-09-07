@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import WikiExplorer from "../components/wiki-explorer";
+import WorldDex from "../components/world-dex";
 
 export const metadata: Metadata = {
-  title: "Wiki spawn Pokémon — Hunter Network",
-  description: "Tra cứu Pokémon spawn ở biome nào, cấp độ, khung giờ và độ hiếm theo datapack Hunter Network.",
+  title: "World Dex — SVFrame Poké Portal",
+  description: "Tra cứu Pokémon, Fakemon, custom form, biome, structure, level, thời gian và điều kiện spawn trên SVFrame.",
 };
 
 export default function WikiPage() {
-  return <WikiExplorer />;
+  return <WorldDex />;
 }
