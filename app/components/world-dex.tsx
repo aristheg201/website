@@ -45,11 +45,10 @@ async function loadGzipJson(url:string):Promise<DexFile>{
   const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"));
   return new Response(stream).json() as Promise<DexFile>;
 }
-async function loadBase64GzipJson(url:string):Promise<OfficialPatch>{
+async function loadGzipPatch(url:string):Promise<OfficialPatch>{
   const r=await fetch(url); if(!r.ok)throw new Error("Cobblemon 1.8 patch unavailable");
-  const encoded=(await r.text()).replace(/\s+/g,"");
-  const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
-  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const compressed=await r.arrayBuffer();
+  const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"));
   return new Response(stream).json() as Promise<OfficialPatch>;
 }
 
@@ -60,21 +59,20 @@ function useDex(){
   const [rows,setRows]=useState<DexPokemon[]>([]); const [locations,setLocations]=useState<Array<{id:string;label:string}>>([]); const [error,setError]=useState(false);
   useEffect(()=>{
     const addonChunks=["lively-1","lively-2","lively-3","lively-4","lively-5","fai-1","fai-2","eldoria-1"];
-    const herdChunks=Array.from({length:8},(_,i)=>`herds-${i+1}`);
     Promise.all([
       loadGzipJson(`${BASE_PATH}/data/spawns.json.gz`),
-      loadBase64GzipJson(`${BASE_PATH}/data/cobblemon18/normal-delta.b64`),
-      ...herdChunks.map(name=>loadBase64GzipJson(`${BASE_PATH}/data/cobblemon18/${name}.b64`)),
+      loadGzipPatch(`${BASE_PATH}/data/cobblemon18/normal-delta.json.gz`),
+      loadGzipPatch(`${BASE_PATH}/data/cobblemon18/herds.json.gz`),
       ...addonChunks.map(name=>fetch(`${BASE_PATH}/data/fakemon/${name}.json`).then(r=>{if(!r.ok)throw new Error("addon dex unavailable");return r.json() as Promise<AddonChunk>;}))
     ]).then(values=>{
       const base=values[0] as DexFile;
       const normalPatch=values[1] as OfficialPatch;
-      const herdPatches=values.slice(2,10) as OfficialPatch[];
-      const addonData=values.slice(10) as AddonChunk[];
+      const herdPatch=values[2] as OfficialPatch;
+      const addonData=values.slice(3) as AddonChunk[];
       const byKey=new Map<string,DexPokemon>();
       base.pokemon.forEach(p=>byKey.set(p.key,{...p,kind:"pokemon",sourceLabel:p.sourceLabel||"Server Pack",variants:p.variants.map(v=>({...v,spawnType:v.spawnType||"normal"}))}));
       (normalPatch.replace||[]).forEach(p=>byKey.set(p.k,expandPatchPokemon(p)));
-      herdPatches.flatMap(p=>p.append||[]).forEach(p=>{
+      (herdPatch.append||[]).forEach(p=>{
         const extra=expandPatchPokemon(p);
         const current=byKey.get(p.k);
         if(current)byKey.set(p.k,{...current,name:extra.name||current.name,variants:[...current.variants,...extra.variants]});
